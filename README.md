@@ -4,7 +4,7 @@
 **CodePupil-min/CodePupil-min** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
 Here are some ideas to get you started:
-
+-->
 - 🔭 I’m currently working on ...
 - 🌱 I’m currently learning USTB
 - 👯 I’m looking to collaborate on ...
@@ -13,4 +13,4 @@ Here are some ideas to get you started:
 - 📫 How to reach me: Pretend99@163.com
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
--->
+
