@@ -1,0 +1,185 @@
+/*
+    实验一 创建数据库和表
+*/
+-- 1
+create database YGGL1
+on Primary(
+    name = YGGL1,
+	filename = 'D:\database\YGGL1_data.mdf',
+    size=10MB,
+    maxsize=50MB,
+    filegrowth=5%
+)
+log on(
+    name = YGGL1_log,
+	filename = 'D:\database\YGGL1_log.ldf',
+    size=2MB,
+    maxsize=5MB,
+    filegrowth=1MB
+);
+
+alter database YGGL1 modify file(
+	name = YGGL1,
+	filename = 'D:\database\YGGL1_data.mdf',
+	size = 20MB
+);
+
+-- use YGGL1
+-- 2
+create table Salary1(
+    EmployeeID char(6) not null primary key,
+    InCome float not null,
+    OutCome float not null,
+    ActIncome as InCome-OutCome --计算列
+);
+
+-- 3
+create table Employees1(
+    EmployeeID char(6) not null primary key,
+    "Name" char(10) not null,
+    Education char(4) not null,
+    Birthday date not null,
+    Gender bit(1) not null default(1),
+    WorkYear tinyint,
+    Address varchar(40),
+    PhoneNumber char(12),
+    DepartmentID char(3) not null,
+    foreign key(DepartmentID) references Departments(DepartmentID)
+);
+alter table Employees1 drop column Address;
+alter table Employees1 alter Gender set default 0;
+
+/*
+    实验二 数据插入、修改、删除
+*/
+-- 1 实验
+-- 2 
+UPDATE Employees SET DepartmentID = '4' WHERE EmployeeID = '010008';
+-- 3
+create table Employees2(
+    EmployeeID char(6) not null primary key,
+    "Name" char(10) not null,
+    Education char(4) not null,
+    Birthday date not null,
+    Gender bit(1) not null default(1),
+    WorkYear tinyint,
+    Address varchar(40),
+    PhoneNumber char(12),
+    DepartmentID char(3) not null,
+    foreign key(DepartmentID) references Departments(DepartmentID)
+);
+INSERT INTO Employees2 SELECT * FROM Employees;
+-- 4
+UPDATE Salary SET InCome = 2890 WHERE EmployeeID = '000001';
+-- 5
+DELETE FROM Employees WHERE EmployeeID = '000001';
+DELETE FROM Salary WHERE EmployeeID = '000001';
+/*
+-- 添加
+insert into Employees(
+    EmployeeID,"Name",Education,Birthday,Gender,WorkYear,Address,PhoneNumber,DepartmentID)
+    values("000001","王林","本科","1966-01-23",1,8,"中山路32-1-508","83355668",'2');
+insert into Salary(EmployeeID,InCome,OutCome)values("000001",2100.8,123.09);
+*/
+
+/*
+    实验三 数据库的查询
+*/
+-- 1
+SELECT Address, Phonenumber FROM Employees;
+-- 2
+SELECT Address as "地址", Phonenumber as "电话" FROM Employees;
+-- 3
+SELECT  Phonenumber FROM Employees where EmployeeID in (select EmployeeID from salary WHERE InCome>2000);
+-- 4
+select InCome-OutCome from salary;
+-- 5
+SELECT COUNT(employeeID) from employees;
+-- 6
+SELECT departmentID from employees where "Name" like "王%";
+-- 7
+select EmployeeID from salary WHERE InCome between 2000 and 3000;
+-- 8
+select * from employees WHERE departmentID in (SELECT departmentID from departments where departmentName="财务部");
+-- 9
+SELECT * FROM employees JOIN salary WHERE employees.EmployeeID=salary.EmployeeID; 
+-- 10
+SELECT departmentName FROM employees,departments WHERE departments.DepartmentID=employees.DepartmentID and "Name"="王林";
+-- 11
+SELECT AVG(InCome) 
+from salary 
+where employeeID 
+in(
+	SELECT employeeId 
+    from employees 
+    where departmentID=(
+		SELECT departmentID 
+        from departments 
+        where departmentName="财务部"
+    )
+);
+-- 12
+SELECT gender,count(employeeID) from employees GROUP BY gender;
+-- 13
+select b.departmentName,count(a.employeeID)
+from employees a,departments b
+where a.departmentID=b.departmentID
+group by b.departmentName
+having count(a.employeeID)>2;
+-- 14
+SELECT a.* from employees a,salary b WHERE a.EmployeeID=b.EmployeeID  order by b.InCome asc;
+-- 15
+SELECT AVG(b.InCome-b.OutCome) 
+from employees a,salary b 
+WHERE a.EmployeeID=b.EmployeeID 
+and departmentID=(
+    SELECT departmentID 
+    from departments 
+    where departmentName="财务部"
+);
+-- 16
+SELECT MAX(b.InCome),MIN(b.InCome) 
+from employees a,salary b 
+WHERE a.EmployeeID=b.EmployeeID 
+and departmentID=(
+    SELECT departmentID 
+    from departments 
+    where departmentName="财务部"
+);
+-- 17
+SELECT "Name" 
+from employees a,salary b 
+WHERE a.EmployeeID=b.EmployeeID 
+and b.InCome>(
+    SELECT MAX(b.InCome) 
+    from employees a,salary b 
+    WHERE a.EmployeeID=b.EmployeeID 
+    and departmentID=(
+        SELECT departmentID 
+        from departments 
+        where departmentName="财务部"
+    )
+);
+-- 18
+select "Name"  
+from employees e,departments d 
+where e.DepartmentID=d.DepartmentID 
+and departmentName="财务部" 
+and birthday<=(
+    select MIN(birthday) 
+    from employees e,departments d 
+    where e.DepartmentID=d.DepartmentID 
+    and departmentName="研发部"
+);
+-- 19
+SELECT education,COUNT(education) 人数
+from employees
+GROUP BY education
+-- 20
+SELECT WorkYear,COUNT(education) 人数
+from employees
+GROUP BY WorkYear
+
+/*
+    实验四 SQL编程
+*/
