@@ -30,7 +30,7 @@ create table Salary1(
     EmployeeID char(6) not null primary key,
     InCome float not null,
     OutCome float not null,
-    ActIncome as InCome-OutCome --计算列
+    ActIncome as InCome-OutCome 
 );
 
 -- 3
@@ -183,3 +183,162 @@ GROUP BY WorkYear
 /*
     实验四 SQL编程
 */
+-- 1
+DECLARE @phone char(12)
+SET @phone = (SELECT PhoneNumber 
+            FROM Employees 
+            WHERE EmployeeID = ‘020010’ )
+SELECT @phone
+-- 2
+select * from Employees where Workyear>5
+-- 3
+if EXISTS(select "Name" from Employees where EmployeeID='111006') 
+    select * from Employees where Employeeid='111006'
+else
+    select "査无此人"
+-- 4
+create function check_ID(@departmentID char(3))
+returns Integer as
+begin
+	declare @num int
+	if exists(select departmentId from departments
+			where @departmentID=DepartmentID)
+		select @num=0
+	else
+		select @num=-1
+	return @num
+end
+go
+-- 5
+declare @num int
+select @num=dbo.check_ID('2')
+if @num=0
+	insert Employees
+	values('990210','张英','本科','1982-03-24',0,4,'南京路2-01','8497534','2')
+go
+-- 6
+select YEAR(Birthday)from Employees where Employeeid='000001'
+-- 7
+SELECT DATEDIFF(day,'2001-06-09',GETDATE());
+
+/*
+    实验五 数据库的视图
+*/
+-- 1
+CREATE VIEW Employees_view (EmployeeID, "Name", RealIncome)
+   AS SELECT Employees.EmployeeID, "Name", InCome-OutCome
+   FROM Employees, Salary
+   WHERE Employees.EmployeeID = Salary.EmployeeID
+-- 2
+select * from employees_view where "Name"="王林";
+-- 3
+CREATE VIEW DS_view AS SELECT * FROM departments;
+UPDATE DS_view SET DepartmentName = "生产车间" WHERE DepartmentID = '5';
+select * from departments;
+select * from DS_view;
+-- 4
+INSERT into DS_view values('6',"广告部","广告业务");
+select * from departments;
+-- 5 
+select DepartmentName from DS_view where DepartmentID='3';
+-- 6
+UPDATE employees_view SET "Name" = "王浩" WHERE employeeID = '000001';
+select * from employees;
+
+/*
+    实验6 索引和约束
+*/
+-- 1
+CREATE INDEX Ad_ind ON Employees ( "Name", Address );
+-- 2
+create table Employees2(
+    EmployeeID char(6) not null,
+    "Name" char(10) not null primary key,
+	Gender bit(1) not null default(1),
+    Education char(4) not null,
+	CONSTRAINT UK_id UNIQUE(EmployeeID)
+);
+-- 3
+create table Salary2(
+    EmployeeID char(6) not null primary key,
+    InCome float not null,
+    OutCome float not null,
+	CONSTRAINT c1 check(InCome>=OutCome)
+);
+-- 4
+insert into Salary2 values("000044",100,400);
+-- 5
+CREATE TABLE Employees3(
+	EmployeeID char(6) not null,
+	Birthday date not null,
+	CONSTRAINT c2 CHECK(Birthday>"1980-1-1")
+);
+-- 6
+CREATE RULE rule_work AS @WorkYear between 0 and 20;
+EXEC sp_bindrule rule_work,'employees.WorkYear';
+EXEC sp_unbindrule 'employees.WorkYear';
+
+/*
+    实验7 存储过程和触发器
+*/
+-- 1
+USE YGGL
+GO
+CREATE PROCEDURE TEST @NUMBER1 int OUTPUT
+AS
+BEGIN
+   DECLARE @NUMBER2 int
+   SET @NUMBER2 = (SELECT COUNT(*) FROM Employees)
+   SET @NUMBER1= @NUMBER2
+END
+-- 2
+pass
+-- 3
+USE YGGL
+GO
+CREATE PROCEDURE EmployeeAdd( 
+    @employeeid char(6), 
+    @name char(10), 
+    @education char(4), 
+    @birthday datetime, 
+    @workyear tinyint, 
+    @gender bit, 
+    @address char(40), 
+    @phonenumber char(12), 
+    @departmentID char(3)
+)
+AS
+BEGIN
+    INSERT INTO Employees
+    VALUES(@employeeid, @name, @education, @birthday, @workyear, @gender, @address, @phonenumber, @departmentID )
+END
+RETURN
+GO
+-- 4
+EXEC EmployeeAdd '990230','刘朝','本科','840909',2,1,'北京路501','85465213','3'
+-- 5
+USE YGGL
+GO
+CREATE TRIGGER EmployeesIns ON dbo.Employees
+FOR INSERT, UPDATE 
+AS
+BEGIN
+   IF ((SELECT DepartmentID from inserted) 
+   NOT IN (SELECT DepartmentID FROM Departments))
+        ROLLBACK 
+END
+-- 6
+pass
+-- 7
+USE YGGL
+GO
+CREATE TRIGGER DepartmentsUpdate ON dbo. Departments
+FOR UPDATE 
+AS
+BEGIN
+   UPDATE Employees
+     SET DepartmentID = ( SELECT DepartmentID FROM inserted)
+     WHERE DepartmentID = (SELECT DepartmentID FROM deleted) 
+END
+-- 8
+pass
